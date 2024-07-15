@@ -167,20 +167,20 @@
             <button id="searchButton">Pesquisar</button>
             <div class="weather-info">
                 <h2 id="location"></h2>
-                <p id="temperature"><strong>🌡️ Temperatura:</strong> 11.43°C</p>
-                <p id="description"><strong>🌤️ Descrição:</strong> névoa</p>
-                <p id="feels-like"><strong>🌡️ Sensação térmica:</strong> 11.14°C</p>
-                <p id="humidity"><strong>💧 Umidade:</strong> 96%</p>
-                <p id="next-rain"><strong>🌧️ Próxima chuva:</strong> segunda-feira, 15/07, 03:00 - 2.09 mm</p>
-                <p id="rain-6h"><strong>🌧️ Chuva 6 horas depois:</strong> 0.22 mm</p>
-                <p id="rain-7days"><strong>🌧️ Chuva acumulada 7 dias:</strong> 4.68 mm</p>
-                <p id="temp-max-7days"><strong>🌡️ Temperatura máxima próximos 7 dias:</strong> 23.66°C - sexta-feira, 19/07, 15:00</p>
-                <p id="temp-min-7days"><strong>🌡️ Temperatura mínima próximos 7 dias:</strong> 10.36°C - terça-feira, 16/07, 03:00</p>
-                <p id="temp-avg-7days"><strong>🌡️ Temperatura média próximos 7 dias:</strong> 14.09°C</p>
-                <p id="wind-speed"><strong>🌬️ Velocidade do vento:</strong> 4.12 m/s</p>
-                <p id="clouds"><strong>☁️ Nuvens:</strong> 100%</p>
-                <p id="pressure"><strong>🔄 Pressão:</strong> 1024 hPa</p>
-                <p id="visibility"><strong>👁️ Visibilidade:</strong> 5000 m</p>
+                <p id="temperature"><strong>🌡️ Temperatura:</strong> N/A</p>
+                <p id="description"><strong>🌤️ Descrição:</strong> N/A</p>
+                <p id="feels-like"><strong>🌡️ Sensação térmica:</strong> N/A</p>
+                <p id="humidity"><strong>💧 Umidade:</strong> N/A</p>
+                <p id="next-rain"><strong>🌧️ Próxima chuva:</strong> N/A</p>
+                <p id="rain-6h"><strong>🌧️ Chuva 6 horas depois:</strong> N/A</p>
+                <p id="rain-7days"><strong>🌧️ Chuva acumulada 7 dias:</strong> N/A</p>
+                <p id="temp-max-7days"><strong>🌡️ Temperatura máxima próximos 7 dias:</strong> N/A</p>
+                <p id="temp-min-7days"><strong>🌡️ Temperatura mínima próximos 7 dias:</strong> N/A</p>
+                <p id="temp-avg-7days"><strong>🌡️ Temperatura média próximos 7 dias:</strong> N/A</p>
+                <p id="wind-speed"><strong>🌬️ Velocidade do vento:</strong> N/A</p>
+                <p id="clouds"><strong>☁️ Nuvens:</strong> N/A</p>
+                <p id="pressure"><strong>🔄 Pressão:</strong> N/A</p>
+                <p id="visibility"><strong>🌤️ Visibilidade:</strong> N/A</p>
             </div>
             <div class="forecast">
                 <h2>Previsão de 5 Dias</h2>
@@ -245,7 +245,7 @@
             windSpeedElement.innerHTML = `<strong>🌬️ Velocidade do vento:</strong> ${data.wind.speed} m/s`;
             cloudsElement.innerHTML = `<strong>☁️ Nuvens:</strong> ${data.clouds.all}%`;
             pressureElement.innerHTML = `<strong>🔄 Pressão:</strong> ${data.main.pressure} hPa`;
-            visibilityElement.innerHTML = `<strong>👁️ Visibilidade:</strong> ${data.visibility} m`;
+            visibilityElement.innerHTML = `<strong>🌤️ Visibilidade:</strong> ${data.visibility} m`;
         }
 
         function fetchForecast(coord) {
@@ -270,15 +270,16 @@
                 nextRainElement.innerHTML = `<strong>🌧️ Próxima chuva:</strong> ${date.toLocaleDateString('pt-BR', options)} - ${rainAmount} mm`;
 
                 const index = forecast.indexOf(nextRain);
-                if (forecast[index + 2]) {
-                    const rain6h = forecast[index + 2].rain ? forecast[index + 2].rain['3h'] || 0 : 0;
+                if (forecast[index + 1] && forecast[index + 2]) {
+                    const rain6h = (forecast[index + 1].rain ? forecast[index + 1].rain['3h'] || 0 : 0) + 
+                                   (forecast[index + 2].rain ? forecast[index + 2].rain['3h'] || 0 : 0);
                     rain6hElement.innerHTML = `<strong>🌧️ Chuva 6 horas depois:</strong> ${rain6h} mm`;
                 } else {
                     rain6hElement.innerHTML = '<strong>🌧️ Chuva 6 horas depois:</strong> Sem previsão disponível';
                 }
             } else {
                 nextRainElement.innerHTML = '<strong>🌧️ Próxima chuva:</strong> Sem previsão de chuva';
-                rain6hElement.innerHTML = '';
+                rain6hElement.innerHTML = '<strong>🌧️ Chuva 6 horas depois:</strong> Sem previsão disponível';
             }
         }
 
