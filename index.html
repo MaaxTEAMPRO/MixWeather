@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previsão do Tempo</title>
+    <style>
+        /* CSS styles */
+        body {
+            font-family: 'Roboto', sans-serif;
+            text-align: center;
+            background-color: #f4f7f6;
+            color: #333;
+            transition: background-color 0.5s;
+            margin: 0;
+            padding: 0;
+        }
+
+        .dark-mode {
+            background-color: #2c3e50;
+            color: #ecf0f1;
+        }
+
+        header {
+            background-color: #3498db;
+            color: #fff;
+            padding: 20px 0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        #dark-mode-btn {
+            background-color: transparent;
+            color: #fff;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            position: absolute;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+        }
+
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            transition: background-color 0.3s;
+        }
+
+        .dark-mode .container {
+            background-color: #34495e;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        .weather-info, .forecast {
+            margin-top: 20px;
+        }
+
+        .forecast h2 {
+            margin-bottom: 10px;
+        }
+
+        .forecast ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .forecast li {
+            padding: 10px;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .forecast li:last-child {
+            border-bottom: none;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header>
+        <h1>MixWeather</h1>
+        <button id="dark-mode-btn">🌙</button>
+    </header>
+    <main>
+        <div class="container">
+            <h2>Digite sua cidade abaixo:</h2>
+            <input type="text" id="locationInput" placeholder="Digite uma cidade">
+            <button id="searchButton">Pesquisar</button>
+            <div class="weather-info">
+                <h2 id="location"></h2>
+                <p id="temperature"><strong>🌡️ Temperatura:</strong> 11.43°C</p>
+                <p id="description"><strong>🌤️ Descrição:</strong> névoa</p>
+                <p id="feels-like"><strong>🌡️ Sensação térmica:</strong> 11.14°C</p>
+                <p id="humidity"><strong>💧 Umidade:</strong> 96%</p>
+                <p id="next-rain"><strong>🌧️ Próxima chuva:</strong> segunda-feira, 15/07, 03:00 - 2.09 mm</p>
+                <p id="rain-6h"><strong>🌧️ Chuva 6 horas depois:</strong> 0.22 mm</p>
+                <p id="rain-7days"><strong>🌧️ Chuva acumulada 7 dias:</strong> 4.68 mm</p>
+                <p id="temp-max-7days"><strong>🌡️ Temperatura máxima próximos 7 dias:</strong> 23.66°C - sexta-feira, 19/07, 15:00</p>
+                <p id="temp-min-7days"><strong>🌡️ Temperatura mínima próximos 7 dias:</strong> 10.36°C - terça-feira, 16/07, 03:00</p>
+                <p id="temp-avg-7days"><strong>🌡️ Temperatura média próximos 7 dias:</strong> 14.09°C</p>
+                <p id="wind-speed"><strong>🌬️ Velocidade do vento:</strong> 4.12 m/s</p>
+                <p id="clouds"><strong>☁️ Nuvens:</strong> 100%</p>
+                <p id="pressure"><strong>🔄 Pressão:</strong> 1024 hPa</p>
+                <p id="visibility"><strong>👁️ Visibilidade:</strong> 5000 m</p>
+            </div>
+            <div class="forecast">
+                <h2>Previsão de 5 Dias</h2>
+                <canvas id="forecastChart"></canvas>
+            </div>
+        </div>
+    </main>
+    <script>
+        const apiKey = '882a7c86ee232f1f5a53433800f48151';
+        const apiUrl = 'https://api.openweathermap.org/data/2.5/weather';
+        const forecastUrl = 'https://api.openweathermap.org/data/2.5/forecast';
+
+        const locationInput = document.getElementById('locationInput');
+        const searchButton = document.getElementById('searchButton');
+        const locationElement = document.getElementById('location');
+        const temperatureElement = document.getElementById('temperature');
+        const descriptionElement = document.getElementById('description');
+        const feelsLikeElement = document.getElementById('feels-like');
+        const humidityElement = document.getElementById('humidity');
+        const nextRainElement = document.getElementById('next-rain');
+        const rain6hElement = document.getElementById('rain-6h');
+        const rain7daysElement = document.getElementById('rain-7days');
+        const tempMax7daysElement = document.getElementById('temp-max-7days');
+        const tempMin7daysElement = document.getElementById('temp-min-7days');
+        const tempAvg7daysElement = document.getElementById('temp-avg-7days');
+        const windSpeedElement = document.getElementById('wind-speed');
+        const cloudsElement = document.getElementById('clouds');
+        const pressureElement = document.getElementById('pressure');
+        const visibilityElement = document.getElementById('visibility');
+        const forecastChart = document.getElementById('forecastChart').getContext('2d');
+        const darkModeButton = document.getElementById('dark-mode-btn');
+
+        searchButton.addEventListener('click', searchWeather);
+        locationInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                searchWeather();
+                saveLastCity(locationInput.value.trim());
+            }
+        });
+        darkModeButton.addEventListener('click', toggleDarkMode);
+
+        function searchWeather() {
+            const location = locationInput.value.trim();
+            if (location) {
+                fetch(`${apiUrl}?q=${location}&appid=${apiKey}&units=metric&lang=pt_br`)
+                    .then(response => response.json())
+                    .then(data => {
+                        displayWeather(data);
+                        fetchForecast(data.coord);
+                        saveLastCity(location);
+                    })
+                    .catch(error => console.error(error));
+            }
+        }
+
+        function displayWeather(data) {
+            locationElement.textContent = data.name;
+            temperatureElement.innerHTML = `<strong>🌡️ Temperatura:</strong> ${data.main.temp}°C`;
+            descriptionElement.innerHTML = `<strong>🌤️ Descrição:</strong> ${translateWeatherDescription(data.weather[0].description)} ${getWeatherEmoji(data.weather[0].main)}`;
+            feelsLikeElement.innerHTML = `<strong>🌡️ Sensação térmica:</strong> ${data.main.feels_like}°C`;
+            humidityElement.innerHTML = `<strong>💧 Umidade:</strong> ${data.main.humidity}%`;
+            windSpeedElement.innerHTML = `<strong>🌬️ Velocidade do vento:</strong> ${data.wind.speed} m/s`;
+            cloudsElement.innerHTML = `<strong>☁️ Nuvens:</strong> ${data.clouds.all}%`;
+            pressureElement.innerHTML = `<strong>🔄 Pressão:</strong> ${data.main.pressure} hPa`;
+            visibilityElement.innerHTML = `<strong>👁️ Visibilidade:</strong> ${data.visibility} m`;
+        }
+
+        function fetchForecast(coord) {
+            fetch(`${forecastUrl}?lat=${coord.lat}&lon=${coord.lon}&appid=${apiKey}&units=metric&lang=pt_br`)
+                .then(response => response.json())
+                .then(data => {
+                    displayForecast(data.list);
+                    displayNextRain(data.list);
+                    displayRain7Days(data.list);
+                    displayTemperatureExtremes(data.list);
+                })
+                .catch(error => console.error(error));
+        }
+
+        function displayNextRain(forecast) {
+            const nextRain = forecast.find(entry => entry.rain && entry.rain['3h'] > 1);
+            if (nextRain) {
+                const date = new Date(nextRain.dt_txt);
+                date.setHours(date.getHours() - 3); // Adjust to GMT-3
+                const options = { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' };
+                const rainAmount = nextRain.rain['3h'];
+                nextRainElement.innerHTML = `<strong>🌧️ Próxima chuva:</strong> ${date.toLocaleDateString('pt-BR', options)} - ${rainAmount} mm`;
+
+                const index = forecast.indexOf(nextRain);
+                if (forecast[index + 2]) {
+                    const rain6h = forecast[index + 2].rain ? forecast[index + 2].rain['3h'] || 0 : 0;
+                    rain6hElement.innerHTML = `<strong>🌧️ Chuva 6 horas depois:</strong> ${rain6h} mm`;
+                } else {
+                    rain6hElement.innerHTML = '<strong>🌧️ Chuva 6 horas depois:</strong> Sem previsão disponível';
+                }
+            } else {
+                nextRainElement.innerHTML = '<strong>🌧️ Próxima chuva:</strong> Sem previsão de chuva';
+                rain6hElement.innerHTML = '';
+            }
+        }
+
+        function displayRain7Days(forecast) {
+            const now = new Date();
+            const sevenDaysAgo = new Date(now.setDate(now.getDate() - 7));
+            let rain7days = 0;
+
+            forecast.forEach(entry => {
+                const date = new Date(entry.dt_txt);
+                date.setHours(date.getHours() - 3); // Adjust to GMT-3
+                if (date > sevenDaysAgo && entry.rain && entry.rain['3h']) {
+                    rain7days += entry.rain['3h'];
+                }
+            });
+
+            rain7daysElement.innerHTML = `<strong>🌧️ Chuva acumulada 7 dias:</strong> ${rain7days.toFixed(2)} mm`;
+        }
+
+        function displayTemperatureExtremes(forecast) {
+            const now = new Date();
+            const sevenDaysLater = new Date(now.setDate(now.getDate() + 7));
+            let temps = [];
+
+            forecast.forEach(entry => {
+                const date = new Date(entry.dt_txt);
+                date.setHours(date.getHours() - 3); // Adjust to GMT-3
+                if (date < sevenDaysLater) {
+                    temps.push(entry.main.temp);
+                }
+            });
+
+            const maxTemp = Math.max(...temps);
+            const minTemp = Math.min(...temps);
+            const avgTemp = (temps.reduce((acc, temp) => acc + temp, 0) / temps.length).toFixed(2);
+
+            const maxTempEntry = forecast.find(entry => entry.main.temp === maxTemp);
+            const minTempEntry = forecast.find(entry => entry.main.temp === minTemp);
+
+            const maxTempDate = new Date(maxTempEntry.dt_txt);
+            maxTempDate.setHours(maxTempDate.getHours() - 3); // Adjust to GMT-3
+            const minTempDate = new Date(minTempEntry.dt_txt);
+            minTempDate.setHours(minTempDate.getHours() - 3); // Adjust to GMT-3
+
+            const options = { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' };
+
+            tempMax7daysElement.innerHTML = `<strong>🌡️ Temperatura máxima próximos 7 dias:</strong> ${maxTemp}°C - ${maxTempDate.toLocaleDateString('pt-BR', options)}`;
+            tempMin7daysElement.innerHTML = `<strong>🌡️ Temperatura mínima próximos 7 dias:</strong> ${minTemp}°C - ${minTempDate.toLocaleDateString('pt-BR', options)}`;
+            tempAvg7daysElement.innerHTML = `<strong>🌡️ Temperatura média próximos 7 dias:</strong> ${avgTemp}°C`;
+        }
+
+        function displayForecast(forecast) {
+            const dates = [];
+            const temperatures = [];
+            const rainfalls = [];
+
+            forecast.forEach(entry => {
+                const date = new Date(entry.dt_txt);
+                date.setHours(date.getHours() - 3); // Adjust to GMT-3
+                const options = { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit' };
+                const formattedDate = date.toLocaleDateString('pt-BR', options);
+                dates.push(formattedDate);
+                temperatures.push(entry.main.temp);
+                rainfalls.push(entry.rain ? entry.rain['3h'] || 0 : 0);
+            });
+
+            if (window.chartInstance) {
+                window.chartInstance.destroy();
+            }
+
+            window.chartInstance = new Chart(forecastChart, {
+                type: 'line',
+                data: {
+                    labels: dates,
+                    datasets: [
+                        {
+                            label: 'Temperatura (°C)',
+                            data: temperatures,
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            borderWidth: 1,
+                            pointBackgroundColor: 'rgba(52, 152, 219, 1)',
+                        },
+                        {
+                            label: 'Chuva (mm)',
+                            data: rainfalls,
+                            backgroundColor: 'rgba(231, 76, 60, 0.2)',
+                            borderColor: 'rgba(231, 76, 60, 1)',
+                            borderWidth: 1,
+                            pointBackgroundColor: 'rgba(231, 76, 60, 1)',
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        x: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Data e Hora'
+                            },
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    const date = new Date(values[index]);
+                                    const options = { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' };
+                                    return date.toLocaleDateString('pt-BR', options);
+                                }
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Valores'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function toggleDarkMode() {
+            document.body.classList.toggle('dark-mode');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const lastCity = localStorage.getItem('lastCity');
+            if (lastCity) {
+                locationInput.value = lastCity;
+                searchWeather();
+            }
+            toggleDarkMode();
+        });
+
+        function saveLastCity(city) {
+            localStorage.setItem('lastCity', city);
+        }
+
+        searchButton.addEventListener('click', () => {
+            const city = locationInput.value.trim();
+            if (city) saveLastCity(city);
+        });
+
+        function translateWeatherDescription(description) {
+            const translations = {
+                'clear sky': 'céu limpo',
+                'few clouds': 'poucas nuvens',
+                'scattered clouds': 'nuvens dispersas',
+                'broken clouds': 'nuvens quebradas',
+                'shower rain': 'chuva de banho',
+                'rain': 'chuva',
+                'thunderstorm': 'trovoada',
+                'snow': 'neve',
+                'mist': 'névoa',
+                'haze': 'neblina',
+                'fog': 'nevoeiro'
+            };
+            return translations[description] || description;
+        }
+
+        function getWeatherEmoji(main) {
+            const emojis = {
+                'Clear': '☀️',
+                'Clouds': '☁️',
+                'Rain': '🌧️',
+                'Drizzle': '🌦️',
+                'Thunderstorm': '⛈️',
+                'Snow': '❄️',
+                'Mist': '🌫️',
+                'Smoke': '💨',
+                'Haze': '🌫️',
+                'Dust': '🌪️',
+                'Fog': '🌫️',
+                'Sand': '🏜️',
+                'Ash': '🌋',
+                'Squall': '💨',
+                'Tornado': '🌪️'
+            };
+            return emojis[main] || '';
+        }
+    </script>
+</body>
+</html>
