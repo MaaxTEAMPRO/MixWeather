@@ -188,6 +188,7 @@
             </div>
         </div>
     </main>
+
     <script>
         const apiKey = '882a7c86ee232f1f5a53433800f48151';
         const apiUrl = 'https://api.openweathermap.org/data/2.5/weather';
@@ -221,6 +222,14 @@
             }
         });
         darkModeButton.addEventListener('click', toggleDarkMode);
+
+        // Função para converter strings de data/hora da API para formato ISO e ajustar o fuso horário
+        function parseDate(dateTimeString, offsetHours = 0) {
+            const isoString = dateTimeString.replace(" ", "T");
+            const date = new Date(isoString);
+            date.setHours(date.getHours() + offsetHours);
+            return date;
+        }
 
         function searchWeather() {
             const location = locationInput.value.trim();
@@ -263,15 +272,14 @@
         function displayNextRain(forecast) {
             const nextRain = forecast.find(entry => entry.rain && entry.rain['3h'] > 1);
             if (nextRain) {
-                const date = new Date(nextRain.dt_txt);
-                date.setHours(date.getHours() - 3); // Adjust to GMT-3
+                const date = parseDate(nextRain.dt_txt, -3);
                 const options = { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' };
                 const rainAmount = nextRain.rain['3h'];
                 nextRainElement.innerHTML = `<strong>🌧️ Próxima chuva:</strong> ${date.toLocaleDateString('pt-BR', options)} - ${rainAmount} mm`;
 
                 const index = forecast.indexOf(nextRain);
                 if (forecast[index + 1] && forecast[index + 2]) {
-                    const rain6h = (forecast[index + 1].rain ? forecast[index + 1].rain['3h'] || 0 : 0) + 
+                    const rain6h = (forecast[index + 1].rain ? forecast[index + 1].rain['3h'] || 0 : 0) +
                                    (forecast[index + 2].rain ? forecast[index + 2].rain['3h'] || 0 : 0);
                     rain6hElement.innerHTML = `<strong>🌧️ Chuva 6 horas depois:</strong> ${rain6h} mm`;
                 } else {
@@ -289,8 +297,7 @@
             let rain7days = 0;
 
             forecast.forEach(entry => {
-                const date = new Date(entry.dt_txt);
-                date.setHours(date.getHours() - 3); // Adjust to GMT-3
+                const date = parseDate(entry.dt_txt, -3);
                 if (date > sevenDaysAgo && entry.rain && entry.rain['3h']) {
                     rain7days += entry.rain['3h'];
                 }
@@ -299,14 +306,13 @@
             rain7daysElement.innerHTML = `<strong>🌧️ Chuva acumulada 7 dias:</strong> ${rain7days.toFixed(2)} mm`;
         }
 
-        function displayTemperatureExtremes(forecast) {
+         function displayTemperatureExtremes(forecast) {
             const now = new Date();
             const sevenDaysLater = new Date(now.setDate(now.getDate() + 7));
             let temps = [];
 
             forecast.forEach(entry => {
-                const date = new Date(entry.dt_txt);
-                date.setHours(date.getHours() - 3); // Adjust to GMT-3
+                const date = parseDate(entry.dt_txt, -3);
                 if (date < sevenDaysLater) {
                     temps.push(entry.main.temp);
                 }
@@ -319,10 +325,8 @@
             const maxTempEntry = forecast.find(entry => entry.main.temp === maxTemp);
             const minTempEntry = forecast.find(entry => entry.main.temp === minTemp);
 
-            const maxTempDate = new Date(maxTempEntry.dt_txt);
-            maxTempDate.setHours(maxTempDate.getHours() - 3); // Adjust to GMT-3
-            const minTempDate = new Date(minTempEntry.dt_txt);
-            minTempDate.setHours(minTempDate.getHours() - 3); // Adjust to GMT-3
+            const maxTempDate = parseDate(maxTempEntry.dt_txt, -3);
+            const minTempDate = parseDate(minTempEntry.dt_txt, -3);
 
             const options = { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' };
 
@@ -337,8 +341,7 @@
             const rainfalls = [];
 
             forecast.forEach(entry => {
-                const date = new Date(entry.dt_txt);
-                date.setHours(date.getHours() - 3); // Adjust to GMT-3
+                const date = parseDate(entry.dt_txt, -3);
                 const options = { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' };
                 const formattedDate = date.toLocaleDateString('pt-BR', options);
                 dates.push(formattedDate);
@@ -381,13 +384,6 @@
                             title: {
                                 display: true,
                                 text: 'Data e Hora'
-                            },
-                            ticks: {
-                                callback: function(value, index, values) {
-                                    const date = new Date(values[index]);
-                                    const options = { weekday: 'long', day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' };
-                                    return date.toLocaleDateString('pt-BR', options);
-                                }
                             }
                         },
                         y: {
@@ -419,11 +415,6 @@
             localStorage.setItem('lastCity', city);
         }
 
-        searchButton.addEventListener('click', () => {
-            const city = locationInput.value.trim();
-            if (city) saveLastCity(city);
-        });
-
         function translateWeatherDescription(description) {
             const translations = {
                 'clear sky': 'céu limpo',
@@ -454,7 +445,7 @@
                 'Haze': '🌫️',
                 'Dust': '🌪️',
                 'Fog': '🌫️',
-                'Sand': '🏜️',
+                 'Sand': '🏜️',
                 'Ash': '🌋',
                 'Squall': '💨',
                 'Tornado': '🌪️'
